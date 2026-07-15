@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Update to your real domain when deployed
+Sitemap: https://gaitpro.example.com/sitemap.xml
