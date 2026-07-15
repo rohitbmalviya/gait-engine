@@ -1,11 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0e1726"/>
-      <stop offset="100%" stop-color="#1a2b45"/>
+      <stop offset="0%" stop-color="#101a2e"/>
+      <stop offset="100%" stop-color="#1b2b4a"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#ff3d9a"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <text x="32" y="42" font-size="34" text-anchor="middle">🦶</text>
-  <path d="M10 50 L22 50 L26 38 L32 54 L38 44 L42 50 L54 50" fill="none" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- M-shaped ground reaction force curve -->
+  <path d="M8 48 C15 48 14 18 21 18 C28 18 27 34 32 34 C37 34 36 18 43 18 C50 18 49 48 56 48"
+        fill="none" stroke="url(#wave)" stroke-width="6" stroke-linecap="round"/>
 </svg>

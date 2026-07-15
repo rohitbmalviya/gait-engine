@@ -20,13 +20,15 @@
   <meta property="og:title" content="GaitPro — Advanced Gait Analysis Dashboard">
   <meta property="og:description" content="Analyze walking patterns in your browser: force-time graphs, gait cycle phases, joint angles from video, and left/right asymmetry detection.">
   <meta property="og:url" content="https://gaitpro.example.com/">
-  <meta property="og:image" content="https://gaitpro.example.com/favicon.svg">
+  <meta property="og:image" content="https://gaitpro.example.com/icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
 
   <!-- Twitter / X card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="GaitPro — Advanced Gait Analysis Dashboard">
   <meta name="twitter:description" content="Analyze walking patterns in your browser: force-time graphs, gait cycle phases, joint angles from video, and left/right asymmetry detection.">
-  <meta name="twitter:image" content="https://gaitpro.example.com/favicon.svg">
+  <meta name="twitter:image" content="https://gaitpro.example.com/icon-512.png">
 
   <!-- Structured data for rich search results -->
   <script type="application/ld+json">
@@ -42,9 +44,11 @@
   }
   </script>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="apple-touch-icon" href="favicon.svg">
+  <!-- Favicons — all browsers -->
+  <link rel="icon" href="favicon.ico" sizes="48x48">                  <!-- legacy browsers & Safari -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">           <!-- modern browsers, crisp at any size -->
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">           <!-- iOS home screen (180×180) -->
+  <link rel="manifest" href="site.webmanifest">                       <!-- Android home screen / PWA -->
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
