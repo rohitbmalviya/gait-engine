@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GaitPro — Advanced Gait Analysis Dashboard</title>
+  <meta name="description" content="Professional gait analysis dashboard for biomechanical assessment. Track stride length, cadence, ground reaction forces, and detect left/right asymmetries.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- ============================================================
+         SIDEBAR
+         ============================================================ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🦶</div>
+          <div class="logo-text">
+            <span class="logo-title">GaitPro</span>
+            <span class="logo-subtitle">Analysis Suite</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+
+        <div class="nav-item active" data-view="dashboard" id="nav-dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </div>
+
+        <div class="nav-item" data-view="import" id="nav-import">
+          <span class="nav-icon">📥</span>
+          <span>Data Import</span>
+        </div>
+
+        <div class="nav-item" data-view="video" id="nav-video">
+          <span class="nav-icon">🎬</span>
+          <span>Video Analysis</span>
+        </div>
+
+        <div class="nav-item" data-view="forcegraph" id="nav-forcegraph">
+          <span class="nav-icon">📈</span>
+          <span>Force-Time Graph</span>
+        </div>
+
+        <div class="nav-item" data-view="parameters" id="nav-parameters">
+          <span class="nav-icon">🔬</span>
+          <span>Gait Parameters</span>
+        </div>
+
+        <div class="nav-section-label">Configuration</div>
+
+        <div class="nav-item" data-view="settings" id="nav-settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-info">
+          GaitPro v1.0<br>
+          Client-side analysis engine
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ============================================================
+         MAIN CONTENT
+         ============================================================ -->
+    <div class="main-content">
+
+      <!-- Top Header -->
+      <header class="top-header">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">☰</button>
+        <div class="header-title">
+          <h1 id="header-title">Dashboard</h1>
+          <span class="header-breadcrumb" id="header-breadcrumb">Overview &amp; key metrics</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-export-csv">
+            <span>📤</span> Export CSV
+          </button>
+          <div class="status-dot active" title="Engine ready"></div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="page-content">
+
+        <!-- ======================================================
+             VIEW: DASHBOARD
+             ====================================================== -->
+        <div class="view-panel active" data-view="dashboard">
+
+          <!-- Empty state (before data loaded) -->
+          <div id="dashboard-empty">
+            <div class="empty-state">
+              <div class="empty-state-icon">🏃</div>
+              <div class="empty-state-title">No Data Loaded</div>
+              <div class="empty-state-subtitle">
+                Import a CSV file or generate demo data to start your gait analysis.
+              </div>
+              <button class="btn btn-primary btn-lg" id="btn-dashboard-demo">
+                <span>⚡</span> Load Demo Data
+              </button>
+            </div>
+          </div>
+
+          <!-- Data state -->
+          <div id="dashboard-data" style="display: none;">
+
+            <!-- Hero Metrics -->
+            <div class="dashboard-hero">
+              <div class="metric-card cyan">
+                <div class="metric-icon cyan">👣</div>
+                <div class="metric-value" id="metric-total-steps">—</div>
+                <div class="metric-label">Total Steps</div>
+              </div>
+              <div class="metric-card magenta">
+                <div class="metric-icon magenta">🎵</div>
+                <div class="metric-value" id="metric-avg-cadence">—</div>
+                <div class="metric-label">Avg Cadence (spm)</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-icon green">💪</div>
+                <div class="metric-value" id="metric-avg-peak-force">—</div>
+                <div class="metric-label">Avg Peak Force</div>
+              </div>
+              <div class="metric-card amber">
+                <div class="metric-icon amber">⏱️</div>
+                <div class="metric-value" id="metric-duration">—</div>
+                <div class="metric-label">Duration</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-icon purple">⚖️</div>
+                <div class="metric-value" id="metric-symmetry">—</div>
+                <div class="metric-label">Symmetry Index</div>
+              </div>
+            </div>
+
+            <!-- Alerts -->
+            <div style="margin-bottom: 20px;" id="alerts-container"></div>
+
+            <!-- Gait Cycle Bar -->
+            <div class="section-title">Gait Cycle</div>
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-title">
+                <span class="icon">🔄</span> Stance vs Swing Phase
+              </div>
+              <div class="gait-cycle-visual" id="gait-cycle-bar"></div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid-2">
+              <!-- Gait Cycle Doughnut -->
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><span class="icon">🍩</span> Phase Distribution</div>
+                    <div class="card-subtitle">Stance vs swing as percentage</div>
+                  </div>
+                </div>
+                <div class="chart-container chart-container-sm">
+                  <canvas id="chart-gait-cycle"></canvas>
+                </div>
+              </div>
+
+              <!-- Symmetry Radar -->
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><span class="icon">🎯</span> Symmetry Analysis</div>
+                    <div class="card-subtitle">Left vs Right foot comparison</div>
+                  </div>
+                </div>
+                <div class="chart-container chart-container-sm">
+                  <canvas id="chart-symmetry-radar"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="card" style="margin-top: 24px;">
+              <div class="card-header">
+                <div>
+                  <div class="card-title"><span class="icon">📋</span> Left vs Right Comparison</div>
+                  <div class="card-subtitle">Mean values with symmetry index</div>
+                </div>
+                <div class="chart-legend">
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background: var(--accent-cyan);"></div>
+                    <span>Left Foot</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background: var(--accent-magenta);"></div>
+                    <span>Right Foot</span>
+                  </div>
+                </div>
+              </div>
+              <div id="dashboard-comparison"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             VIEW: DATA IMPORT
+             ====================================================== -->
+        <div class="view-panel" data-view="import">
+          <div class="grid-2">
+            <!-- Upload Zone -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">📂</span> Upload CSV File</div>
+              </div>
+              <div class="upload-zone" id="upload-zone">
+                <input type="file" id="file-input" accept=".csv" aria-label="Upload CSV file">
+                <div class="upload-zone-icon">📁</div>
+                <div class="upload-zone-title">Drop your CSV file here</div>
+                <div class="upload-zone-subtitle">or click to browse • CSV format • Max 10MB</div>
+              </div>
+              <div style="margin-top: 16px;">
+                <div class="card-subtitle" style="margin-bottom: 8px;">Expected CSV format:</div>
+                <code style="font-size: 12px; color: var(--accent-cyan); background: rgba(0,229,255,0.08); padding: 8px 12px; border-radius: 6px; display: block;">
+                  timestamp, left_force, right_force<br>
+                  0.00, 0.0, 120.5<br>
+                  0.01, 5.2, 340.1<br>
+                  ...
+                </code>
+              </div>
+            </div>
+
+            <!-- Demo Data -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">⚡</span> Demo Data</div>
+              </div>
+              <div style="text-align: center; padding: 24px 0;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🧪</div>
+                <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">
+                  Bundled Demo Recording
+                </div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; max-width: 300px; margin-left: auto; margin-right: auto;">
+                  Loads the sample walking session from the bundled demo folder — real MediaPipe skeleton tracking data converted to gait forces.
+                </div>
+                <button class="btn btn-primary btn-lg" id="btn-load-demo">
+                  <span>⚡</span> Load Demo Data
+                </button>
+              </div>
+              <div class="divider"></div>
+              <div class="card-subtitle">Demo includes:</div>
+              <ul style="list-style: none; margin-top: 8px; font-size: 13px; color: var(--text-secondary); line-height: 2;">
+                <li>✓ Real recorded walking session</li>
+                <li>✓ MediaPipe Pose skeleton data (33 landmarks)</li>
+                <li>✓ Derived ground reaction forces</li>
+                <li>✓ Matching video available in Video Analysis</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Import Status -->
+          <div class="card" style="margin-top: 24px; display: none;" id="import-status">
+            <div class="card-header">
+              <div class="card-title"><span class="icon">✅</span> Data Loaded</div>
+              <div class="badge badge-green">Ready</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             VIEW: FORCE-TIME GRAPH
+             ====================================================== -->
+        <div class="view-panel" data-view="forcegraph">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><span class="icon">📈</span> Ground Reaction Force</div>
+                <div class="card-subtitle">Force vs time for left and right foot</div>
+              </div>
+              <div class="chart-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background: var(--accent-cyan);"></div>
+                  <span>Left Foot</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background: var(--accent-magenta);"></div>
+                  <span>Right Foot</span>
+                </div>
+              </div>
+            </div>
+            <div class="chart-container chart-container-lg">
+              <canvas id="chart-force-time"></canvas>
+            </div>
+          </div>
+
+          <!-- Info Cards -->
+          <div class="grid-3" style="margin-top: 24px;">
+            <div class="card" style="text-align: center;">
+              <div style="font-size: 28px; margin-bottom: 8px;">📐</div>
+              <div class="card-title" style="justify-content: center; margin-bottom: 4px;">Kinematics</div>
+              <div class="card-subtitle">Motion tracking data — joint angles, stride length, walking speed measured via markers and cameras</div>
+            </div>
+            <div class="card" style="text-align: center;">
+              <div style="font-size: 28px; margin-bottom: 8px;">⚖️</div>
+              <div class="card-title" style="justify-content: center; margin-bottom: 4px;">Kinetics</div>
+              <div class="card-subtitle">Force measurements — ground reaction forces, center of pressure from force platforms and insoles</div>
+            </div>
+            <div class="card" style="text-align: center;">
+              <div style="font-size: 28px; margin-bottom: 8px;">⚡</div>
+              <div class="card-title" style="justify-content: center; margin-bottom: 4px;">EMG</div>
+              <div class="card-subtitle">Electromyography — muscle activation patterns during each phase of the gait cycle</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             VIEW: VIDEO ANALYSIS
+             ====================================================== -->
+        <div class="view-panel" data-view="video">
+
+          <!-- Video Upload Section (shown when no files loaded) -->
+          <div id="video-empty-state">
+            <div class="grid-2">
+              <!-- Video Upload -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><span class="icon">🎥</span> Upload Video File</div>
+                </div>
+                <div class="upload-zone" id="video-upload-zone">
+                  <input type="file" id="video-file-input" accept="video/*,.avi,.mp4,.mov,.webm" aria-label="Upload video file">
+                  <div class="upload-zone-icon">🎬</div>
+                  <div class="upload-zone-title">Drop your video file here</div>
+                  <div class="upload-zone-subtitle">MP4, WebM, MOV, or AVI • Click to browse</div>
+                </div>
+              </div>
+
+              <!-- CSV Upload -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><span class="icon">🦴</span> Upload Skeleton CSV</div>
+                </div>
+                <div class="upload-zone" id="csv-upload-zone">
+                  <input type="file" id="csv-file-input" accept=".csv" aria-label="Upload skeleton CSV file">
+                  <div class="upload-zone-icon">📊</div>
+                  <div class="upload-zone-title">Drop skeleton CSV data here</div>
+                  <div class="upload-zone-subtitle">MediaPipe Pose landmark CSV format</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Upload Status -->
+            <div class="video-upload-status" id="video-upload-status">
+              <div class="upload-status-item" id="video-status-indicator">
+                <span class="status-icon pending">○</span>
+                <span>Video file: Not loaded</span>
+              </div>
+              <div class="upload-status-item" id="csv-status-indicator">
+                <span class="status-icon pending">○</span>
+                <span>Skeleton CSV: Not loaded</span>
+              </div>
+              <button class="btn btn-primary btn-lg" id="btn-start-analysis" disabled>
+                <span>▶</span> Start Video Analysis
+              </button>
+              <button class="btn btn-primary btn-lg" id="btn-video-demo">
+                <span>⚡</span> Load Demo Data
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Analysis Active State (shown after files loaded) -->
+          <div id="video-active-state" style="display: none;">
+
+            <!-- Video Player + Skeleton Overlay -->
+            <div class="card video-player-card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title"><span class="icon">🎬</span> Gait Video Analysis</div>
+                  <div class="card-subtitle">Skeleton tracking with joint angle computation</div>
+                </div>
+                <div class="video-header-actions">
+                  <button class="btn btn-secondary btn-sm" id="btn-reload-video">
+                    <span>↺</span> Reload
+                  </button>
+                </div>
+              </div>
+
+              <div class="video-player-container" id="video-player-container">
+                <video id="video-player" playsinline preload="metadata"></video>
+                <canvas id="skeleton-canvas"></canvas>
+
+                <!-- Video Overlay Controls -->
+                <div class="video-overlay-controls" id="video-overlay-controls">
+                  <button class="video-btn" id="btn-step-back" title="Previous frame">⏮</button>
+                  <button class="video-btn video-btn-play" id="btn-play-pause" title="Play/Pause">▶</button>
+                  <button class="video-btn" id="btn-step-fwd" title="Next frame">⏭</button>
+                </div>
+              </div>
+
+              <!-- Video Controls Bar -->
+              <div class="video-controls-bar">
+                <div class="video-progress-container">
+                  <input type="range" class="video-progress" id="video-progress" min="0" max="1000" value="0" aria-label="Video progress">
+                  <div class="video-progress-fill" id="video-progress-fill"></div>
+                </div>
+
+                <div class="video-controls-row">
+                  <div class="video-time-display">
+                    <span id="video-current-time">0:00</span>
+                    <span class="video-time-sep">/</span>
+                    <span id="video-total-time">0:00</span>
+                  </div>
+
+                  <div class="video-frame-display">
+                    Frame <span id="video-frame-current">0</span> / <span id="video-frame-total">0</span>
+                  </div>
+
+                  <div class="video-controls-group">
+                    <label class="video-toggle" title="Show skeleton">
+                      <input type="checkbox" id="toggle-skeleton" checked>
+                      <span>🦴 Skeleton</span>
+                    </label>
+                    <label class="video-toggle" title="Show angles">
+                      <input type="checkbox" id="toggle-angles" checked>
+                      <span>📐 Angles</span>
+                    </label>
+                    <select class="form-select form-select-sm" id="video-speed" aria-label="Playback speed">
+                      <option value="0.25">0.25x</option>
+                      <option value="0.5">0.5x</option>
+                      <option value="0.75">0.75x</option>
+                      <option value="1" selected>1x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2x</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Real-time Metrics Row -->
+            <div class="video-metrics-row" id="video-metrics-row">
+              <div class="metric-card cyan">
+                <div class="metric-icon cyan">🦵</div>
+                <div class="metric-value" id="metric-left-knee">—</div>
+                <div class="metric-label">Left Knee Angle</div>
+              </div>
+              <div class="metric-card magenta">
+                <div class="metric-icon magenta">🦵</div>
+                <div class="metric-value" id="metric-right-knee">—</div>
+                <div class="metric-label">Right Knee Angle</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-icon green">🏃</div>
+                <div class="metric-value" id="metric-left-hip">—</div>
+                <div class="metric-label">Left Hip Angle</div>
+              </div>
+              <div class="metric-card amber">
+                <div class="metric-icon amber">🏃</div>
+                <div class="metric-value" id="metric-right-hip">—</div>
+                <div class="metric-label">Right Hip Angle</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-icon purple">🧍</div>
+                <div class="metric-value" id="metric-trunk-lean">—</div>
+                <div class="metric-label">Trunk Lean</div>
+              </div>
+            </div>
+
+            <!-- Gait Phase Indicator -->
+            <div class="gait-phase-row">
+              <div class="card gait-phase-card">
+                <div class="card-title"><span class="icon">👣</span> Current Gait Phase</div>
+                <div class="gait-phase-indicators">
+                  <div class="gait-phase-indicator" id="gait-phase-left">
+                    <div class="phase-dot cyan"></div>
+                    <span class="phase-label">Left Foot</span>
+                    <span class="phase-value" id="phase-left-value">—</span>
+                  </div>
+                  <div class="gait-phase-indicator" id="gait-phase-right">
+                    <div class="phase-dot magenta"></div>
+                    <span class="phase-label">Right Foot</span>
+                    <span class="phase-value" id="phase-right-value">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Joint Angle Charts -->
+            <div class="section-title">Joint Angle Timeline</div>
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><span class="icon">🦵</span> Knee Flexion</div>
+                    <div class="card-subtitle">Left vs Right knee angle over time</div>
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-knee-angle"></canvas>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><span class="icon">🏃</span> Hip Flexion</div>
+                    <div class="card-subtitle">Left vs Right hip angle over time</div>
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-hip-angle"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 20px;">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><span class="icon">🦶</span> Ankle Angle</div>
+                    <div class="card-subtitle">Left vs Right ankle angle over time</div>
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-ankle-angle"></canvas>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><span class="icon">🧍</span> Trunk Lean</div>
+                    <div class="card-subtitle">Forward/backward trunk inclination</div>
+                  </div>
+                </div>
+                <div class="chart-container">
+                  <canvas id="chart-trunk-lean"></canvas>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ======================================================
+             VIEW: GAIT PARAMETERS
+             ====================================================== -->
+        <div class="view-panel" data-view="parameters">
+
+          <!-- Parameter Chart -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><span class="icon">📊</span> Step-by-Step Comparison</div>
+                <div class="card-subtitle">Compare left vs right foot across steps</div>
+              </div>
+              <div>
+                <select class="form-select" id="param-chart-selector" style="width: 200px;" aria-label="Select parameter">
+                  <option value="peakForce">Peak Force (N)</option>
+                  <option value="contactTime">Contact Time (ms)</option>
+                  <option value="cadence">Cadence (steps/min)</option>
+                  <option value="loadingRate">Loading Rate (N/s)</option>
+                  <option value="impulse">Impulse (N·s)</option>
+                </select>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-step-params"></canvas>
+            </div>
+          </div>
+
+          <!-- Foot Summary Boxes -->
+          <div class="param-summary-grid">
+            <div class="param-summary-box">
+              <h3><span class="dot cyan"></span> Left Foot Summary</h3>
+              <div id="left-foot-summary"></div>
+            </div>
+            <div class="param-summary-box">
+              <h3><span class="dot magenta"></span> Right Foot Summary</h3>
+              <div id="right-foot-summary"></div>
+            </div>
+          </div>
+
+          <!-- Step Table -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><span class="icon">📋</span> All Steps</div>
+                <div class="card-subtitle">Detailed per-step measurements</div>
+              </div>
+            </div>
+            <div class="data-table-wrapper" style="max-height: 400px; overflow-y: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Step #</th>
+                    <th>Foot</th>
+                    <th>Peak Force (N)</th>
+                    <th>Contact Time (ms)</th>
+                    <th>Step Duration (ms)</th>
+                    <th>Cadence (spm)</th>
+                    <th>Loading Rate (N/s)</th>
+                    <th>Impulse (N·s)</th>
+                  </tr>
+                </thead>
+                <tbody id="step-table-body">
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                      Load data to see step parameters
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ======================================================
+             VIEW: SETTINGS
+             ====================================================== -->
+        <div class="view-panel" data-view="settings">
+          <div class="settings-grid">
+
+            <!-- Step Detection Settings -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">🎚️</span> Step Detection</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-force-threshold">Force Threshold</label>
+                <input type="range" class="form-range" id="setting-force-threshold" min="5" max="100" step="1" value="20" aria-label="Force threshold">
+                <div class="range-value" id="force-threshold-value">20 N</div>
+                <div class="card-subtitle" style="margin-top: 4px;">Minimum force (N) to consider foot contact</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-min-step-duration">Min Step Duration</label>
+                <input type="range" class="form-range" id="setting-min-step-duration" min="50" max="500" step="10" value="200" aria-label="Minimum step duration">
+                <div class="range-value" id="min-step-duration-value">200 ms</div>
+                <div class="card-subtitle" style="margin-top: 4px;">Minimum stance phase duration to filter noise</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-max-step-duration">Max Step Duration</label>
+                <input type="range" class="form-range" id="setting-max-step-duration" min="500" max="5000" step="100" value="2000" aria-label="Maximum step duration">
+                <div class="range-value" id="max-step-duration-value">2000 ms</div>
+                <div class="card-subtitle" style="margin-top: 4px;">Maximum step duration to prevent step merging</div>
+              </div>
+            </div>
+
+            <!-- Analysis Settings -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">🔧</span> Analysis</div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="setting-asymmetry-threshold">Asymmetry Alert Threshold</label>
+                <input type="range" class="form-range" id="setting-asymmetry-threshold" min="1" max="30" step="1" value="10" aria-label="Asymmetry threshold">
+                <div class="range-value" id="asymmetry-threshold-value">10%</div>
+                <div class="card-subtitle" style="margin-top: 4px;">Flag L/R differences exceeding this percentage</div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="btn-apply-settings">
+                  <span>✓</span> Apply Settings
+                </button>
+                <button class="btn btn-secondary" id="btn-reset-settings">
+                  <span>↺</span> Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            <!-- About Card -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="icon">ℹ️</span> About Gait Analysis</div>
+              </div>
+              <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                <p style="margin-bottom: 12px;">
+                  <strong>Gait analysis</strong> is the systematic study of human walking. 
+                  By tracking parameters like stride length, walking speed, cadence, and joint angles, 
+                  clinicians identify imbalances, monitor rehabilitation progress, and optimize athletic performance.
+                </p>
+                <p style="margin-bottom: 12px;">
+                  <strong>Key measurement techniques:</strong>
+                </p>
+                <ul style="list-style: none; line-height: 2.2;">
+                  <li>📐 <strong>Kinematics</strong> — Markers, cameras, GPS, accelerometers</li>
+                  <li>⚖️ <strong>Kinetics</strong> — Force platforms, pressure insoles, footswitches</li>
+                  <li>⚡ <strong>EMG</strong> — Muscle activation patterns</li>
+                </ul>
+                <div class="divider"></div>
+                <p style="margin-bottom: 0;">
+                  <strong>Gait Cycle Phases:</strong><br>
+                  <span style="color: var(--accent-cyan);">■</span> Stance (~60%) — Foot on ground<br>
+                  <span style="color: var(--accent-magenta);">■</span> Swing (~40%) — Foot in air
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /.page-content -->
+    </div><!-- /.main-content -->
+  </div><!-- /.app-layout -->
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts (order matters: data → engine → charts → app) -->
+  <script src="data.js"></script>
+  <script src="gait-engine.js"></script>
+  <script src="charts.js"></script>
+  <script src="skeleton-data.js"></script>
+  <script src="video-player.js"></script>
+  <script src="video-charts.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
